@@ -1,0 +1,12 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace OrganizationService.Models
+{
+    public class Organization
+    {
+        [Key]
+        public int Id { get; set; }
+        public Guid OrgId { get; set; }
+        public ICollection<User> Users { get; set; } = new List<User>();
+    }
+}
