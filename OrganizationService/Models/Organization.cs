@@ -7,6 +7,7 @@ namespace OrganizationService.Models
         [Key]
         public int Id { get; set; }
         public Guid OrgId { get; set; }
-        public ICollection<User> Users { get; set; } = new List<User>();
+        public string OrgName { get; set; }
+        public string ConnectionString { get; set; }
     }
 }

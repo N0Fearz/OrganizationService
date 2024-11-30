@@ -6,6 +6,7 @@ namespace OrganizationService.Repository
     {
         IEnumerable<Organization> GetOrganizations();
         Organization GetOrganizationById(Guid id);
+        void AddOrganization(Organization organization);
         void Save();
     }
 }

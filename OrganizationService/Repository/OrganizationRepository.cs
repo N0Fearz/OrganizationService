@@ -12,7 +12,14 @@ namespace OrganizationService.Repository
         }
         public Organization GetOrganizationById(Guid id)
         {
-            throw new NotImplementedException();
+            var organization = _organizationContext.Organizations.FirstOrDefault(d => d.OrgId == id);
+            return organization;
+        }
+
+        public void AddOrganization(Organization organization)
+        {
+            _organizationContext.Organizations.Add(organization);
+            _organizationContext.SaveChanges();
         }
 
         public IEnumerable<Organization> GetOrganizations()
@@ -22,7 +29,7 @@ namespace OrganizationService.Repository
 
         public void Save()
         {
-            throw new NotImplementedException();
+            _organizationContext.SaveChanges();
         }
     }
 }
