@@ -5,12 +5,12 @@ using OrganizationService.Services;
 
 namespace OrganizationTests;
 
-public class UnitTest1
+public class OrganizationServiceTest
 {
     private readonly IOrganizationRepository _organizationRepository;
     private readonly IOrganizationService _organizationService;
 
-    public UnitTest1()
+    public OrganizationServiceTest()
     {
         _organizationRepository = Substitute.For<IOrganizationRepository>();
         _organizationService = new OrganizationService.Services.OrganizationService(_organizationRepository);
@@ -35,7 +35,5 @@ public class UnitTest1
             "{\"id\":\"ac4ec53c-45da-4bec-939a-08e9a360f546\",\"alias\":\"organization\",\"enabled\":true,\"description\":\"\",\"redirectUrl\":\"\",\"attributes\":{},\"domains\":[{\"name\":\"1233.bsr\",\"verified\":false}]}";
         //act and assert
         Assert.Throws<ArgumentNullException>(() => _organizationService.AddOrganization(organizationMessage));
-    }
-}ganizationMessage));
     }
 }
