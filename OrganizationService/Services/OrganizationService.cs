@@ -10,29 +10,42 @@ namespace OrganizationService.Services;
 
 public class OrganizationService : IOrganizationService
 {
-    private IOrganizationRepository _organizationRepository;
-    private readonly ErpContext _erpContext;
-    public OrganizationService(IOrganizationRepository organizationRepository, ErpContext erpContext)
+    private readonly IOrganizationRepository _organizationRepository;
+    public OrganizationService(IOrganizationRepository organizationRepository)
     {
         _organizationRepository = organizationRepository;
-        _erpContext = erpContext;
     }
-    public string AddOrganization(string organizationRequest)
+    public string AddOrganization(string organizationMessage)
     {
-        var orgId = (Guid)JObject.Parse(organizationRequest)["id"];
-        var orgName = (string)JObject.Parse(organizationRequest)["name"];
-        var schemaName = AddOrganizationDbSchema(orgName);
-        var connectionString =
-            $"Server=192.168.2.152;Port=5432;Database=organizations;User Id=postgres;Password=password;SearchPath={schemaName};";
-        
-        Organization organization = new Organization
+        if (organizationMessage != null)
         {
-            OrgId = orgId,
-            OrgName = orgName,
-            ConnectionString = connectionString
-        };
-        _organizationRepository.AddOrganization(organization);
-        return connectionString;
+            if (!JObject.Parse(organizationMessage).ContainsKey("name"))
+            {
+                Console.WriteLine("Error: Organization Name is missing");
+                throw new ArgumentNullException(organizationMessage, "Organization Name is missing");
+            }
+
+            if (!JObject.Parse(organizationMessage).ContainsKey("id"))
+            {
+                Console.WriteLine("Error: Organization Id is missing");
+                throw new ArgumentNullException(organizationMessage, "Organization Id is missing");
+            }
+            
+            var orgId = (Guid)JObject.Parse(organizationMessage)["id"]!;
+            var orgName = (string)JObject.Parse(organizationMessage)["name"]!;
+            var schemaName = AddOrganizationDbSchema(orgName);
+        
+            Organization organization = new Organization
+            {
+                OrgId = orgId,
+                OrgName = orgName,
+                SchemaName = schemaName
+            };
+            _organizationRepository.AddOrganization(organization);
+            return schemaName;
+        }
+        
+        throw new ArgumentNullException(organizationMessage, "organization message is missing");
     }
 
     public void CheckOrganization(Guid organizationId)
@@ -53,9 +66,7 @@ public class OrganizationService : IOrganizationService
     public string AddOrganizationDbSchema(string orgName)
     {
         var schemaName = $"schema_{orgName.ToLower()}";
-        var cmd = new StringBuilder().Append("CREATE SCHEMA IF NOT EXISTS ").Append(schemaName).ToString();
-        var formattableString = FormattableStringFactory.Create(cmd);
-        _erpContext.Database.ExecuteSql(formattableString);
+        _organizationRepository.AddOrganizationDbSchema(schemaName);
         
         return schemaName;
     }

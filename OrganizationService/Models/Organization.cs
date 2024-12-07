@@ -8,6 +8,6 @@ namespace OrganizationService.Models
         public int Id { get; set; }
         public Guid OrgId { get; set; }
         public string OrgName { get; set; }
-        public string ConnectionString { get; set; }
+        public string SchemaName { get; set; }
     }
 }

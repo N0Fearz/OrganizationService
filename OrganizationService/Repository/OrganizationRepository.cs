@@ -1,4 +1,7 @@
-﻿using OrganizationService.Data;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using OrganizationService.Data;
 using OrganizationService.Models;
 
 namespace OrganizationService.Repository
@@ -6,9 +9,11 @@ namespace OrganizationService.Repository
     public class OrganizationRepository : IOrganizationRepository
     {
         private readonly OrganizationContext _organizationContext;
-        public OrganizationRepository(OrganizationContext organizationContext)
+        private readonly ErpContext _erpContext;
+        public OrganizationRepository(OrganizationContext organizationContext, ErpContext erpContext)
         {
             _organizationContext = organizationContext;
+            _erpContext = erpContext;
         }
         public Organization GetOrganizationById(Guid id)
         {
@@ -20,6 +25,13 @@ namespace OrganizationService.Repository
         {
             _organizationContext.Organizations.Add(organization);
             _organizationContext.SaveChanges();
+        }
+
+        public void AddOrganizationDbSchema(string schemaName)
+        {
+            var cmd = new StringBuilder().Append("CREATE SCHEMA IF NOT EXISTS ").Append(schemaName).ToString();
+            var formattableString = FormattableStringFactory.Create(cmd);
+            _erpContext.Database.ExecuteSql(formattableString);
         }
 
         public IEnumerable<Organization> GetOrganizations()

@@ -7,6 +7,7 @@ namespace OrganizationService.Repository
         IEnumerable<Organization> GetOrganizations();
         Organization GetOrganizationById(Guid id);
         void AddOrganization(Organization organization);
+        void AddOrganizationDbSchema(string schemaName);
         void Save();
     }
 }

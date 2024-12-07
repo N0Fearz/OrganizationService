@@ -14,8 +14,8 @@ namespace OrganizationService.Services
         private IConnection _connection;
         private IModel _channel;
         private readonly IConfiguration _configuration;
-        private IServiceProvider _serviceProvider;
-        private OrganizationCreationRabbitMqSender _sender;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly OrganizationCreationRabbitMqSender _sender;
 
         public OrganizationCreationRabbitMqConsumer(IServiceProvider serviceProvider, IConfiguration configuration, OrganizationCreationRabbitMqSender sender)
         {
@@ -75,14 +75,17 @@ namespace OrganizationService.Services
             using (var scope = _serviceProvider.CreateScope())
             {
                 var organizationService = scope.ServiceProvider.GetRequiredService<IOrganizationService>();
-                var connectionString = organizationService.AddOrganization((string)JObject.Parse(message)["representation"]);
+                if (JObject.Parse(message).ContainsKey("representation"))
+                {
+                    var schemaName = organizationService.AddOrganization((string)JObject.Parse(message)["representation"]!);
                 
-                _sender.SendMessage("create.organization", connectionString);
+                    _sender.SendMessage("create.organization", schemaName);
+                }
             }
             return Task.CompletedTask;
         }
 
-        private async void StopRabbitMQ()
+        private void StopRabbitMQ()
         {
             _channel?.Close();
             _connection?.Close();
