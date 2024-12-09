@@ -46,17 +46,21 @@ public class OrganizationCheckRabbitMqconsumer : BackgroundService
         var consumer = new EventingBasicConsumer(_channel);
         consumer.Received += async (model, ea) =>
         {
-            Console.WriteLine($"Received message: {ea.BasicProperties.CorrelationId}");
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
+            Console.WriteLine($"Received message: {ea.BasicProperties.CorrelationId}");
 
             // Process the message
             using (var scope = _serviceProvider.CreateScope())
             {
+                var props = ea.BasicProperties;
+                var replyProps = _channel.CreateBasicProperties();
+                replyProps.CorrelationId = props.CorrelationId;
                 var organizationService = scope.ServiceProvider.GetService<IOrganizationService>();
                 var response = organizationService.CheckOrganization(new Guid(message));
                 var newBody = Encoding.UTF8.GetBytes(response);
-                _channel.BasicPublish("", ea.BasicProperties.ReplyTo, null, newBody);
+                _channel.BasicPublish(exchange: "", routingKey: props.ReplyTo, basicProperties: replyProps, body:newBody);
+                Console.WriteLine($"Sent message: {props.ReplyTo}");
             }
         };
 
