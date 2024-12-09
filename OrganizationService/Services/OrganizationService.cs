@@ -48,9 +48,15 @@ public class OrganizationService : IOrganizationService
         throw new ArgumentNullException(organizationMessage, "organization message is missing");
     }
 
-    public void CheckOrganization(Guid organizationId)
+    public string CheckOrganization(Guid organizationId)
     {
-        throw new NotImplementedException();
+        var result = _organizationRepository.GetOrganizationById(organizationId);
+        if (result == null)
+        {
+            throw new ArgumentNullException(result.OrgName, "Organization Not Found");
+        }
+
+        return result.SchemaName;
     }
 
     public Organization GetOrganization(Guid organizationId)

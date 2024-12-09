@@ -11,9 +11,10 @@ var configuration = builder.Configuration;
 
 builder.Services.AddTransient<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IOrganizationService, OrganizationService.Services.OrganizationService>();
+builder.Services.AddTransient<IOrganizationService, OrganizationService.Services.OrganizationService>();
 builder.Services.AddSingleton<IConfiguration>(configuration);
 builder.Services.AddHostedService<OrganizationCreationRabbitMqConsumer>();
+builder.Services.AddHostedService<OrganizationCheckRabbitMqconsumer>();
 builder.Services.AddSingleton<OrganizationCreationRabbitMqSender>();
 
 // Add services to the container.

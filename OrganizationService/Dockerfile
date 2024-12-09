@@ -9,19 +9,27 @@ EXPOSE 5001
 
 
 # This stage is used to build the service project
+#FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+#ARG BUILD_CONFIGURATION=Release
+#WORKDIR /src
+#COPY ["OrganizationService/OrganizationService.csproj", "OrganizationService/"]
+#RUN dotnet restore "./OrganizationService/OrganizationService.csproj"
+#COPY . .
+#WORKDIR "/src/OrganizationService"
+#RUN dotnet build "./OrganizationService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["OrganizationService/OrganizationService.csproj", "OrganizationService/"]
-RUN dotnet restore "./OrganizationService/OrganizationService.csproj"
-COPY . .
-WORKDIR "/src/OrganizationService"
-RUN dotnet build "./OrganizationService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR /App
+COPY *.csproj ./
+RUN dotnet restore
+COPY . ./
+RUN dotnet build -c $BUILD_CONFIGURATION
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./OrganizationService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+#RUN dotnet publish "./OrganizationService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish OrganizationService.csproj -c $BUILD_CONFIGURATION -o /app/publish
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
