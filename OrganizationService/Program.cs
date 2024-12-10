@@ -7,6 +7,8 @@ using OrganizationService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
 var configuration = builder.Configuration;
 
 builder.Services.AddTransient<IOrganizationRepository, OrganizationRepository>();
