@@ -6,6 +6,8 @@ pipeline {
   environment {
       DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
       PATH = "${env.HOME}/.dotnet/tools:${env.PATH}" // Voeg ~/.dotnet/tools toe aan het PATH
+      DOCKER_IMAGE = "casgoorman/organizationservice" // Pas aan naar jouw image
+      DOCKER_TAG = "latest" // Of gebruik bijv. BUILD_NUMBER voor een unieke tag
   }
   stages{
     stage('Clean and checkout'){
@@ -49,5 +51,29 @@ pipeline {
         }
       }
     }
+        stage('Build Docker Image') {
+            steps {
+              dir('ArticleService') {
+                script {
+                    // Zorg dat je een Dockerfile in je project hebt
+                    sh """
+                    docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
+                    """
+                }
+              }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    // Login naar Docker Registry (indien nodig)
+                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
+                        sh """
+                        docker push ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+                        """
+                    }
+                }
+            }
+        }
   }
 }
