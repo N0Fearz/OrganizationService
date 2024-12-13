@@ -39,7 +39,7 @@ namespace OrganizationService.Services
             _channel = _connection.CreateModel();
 
             // Declare a queue (optional for pre-declared queues like amq.topic)
-            _queueName = _channel.QueueDeclare().QueueName;
+            _queueName = _channel.QueueDeclare("keycloak-organization-creation", durable:true, exclusive:false, autoDelete: false, arguments: null);
 
             // Bind to the topic exchange
             _channel.QueueBind(queue: _queueName,
@@ -79,7 +79,7 @@ namespace OrganizationService.Services
                 {
                     var schemaName = organizationService.AddOrganization((string)JObject.Parse(message)["representation"]!);
                 
-                    _sender.SendMessage("create.organization", schemaName);
+                    _sender.SendMessage("organization.create", schemaName);
                 }
             }
             return Task.CompletedTask;

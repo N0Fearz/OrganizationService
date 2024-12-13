@@ -5,15 +5,12 @@ namespace OrganizationService.Services;
 
 public class OrganizationCreationRabbitMqSender
 {
-    private IConnection _connection;
     private IModel _channel;
     private readonly IConfiguration _configuration;
-    private IServiceProvider _serviceProvider;
 
-    public OrganizationCreationRabbitMqSender(IConfiguration configuration, IServiceProvider serviceProvider)
+    public OrganizationCreationRabbitMqSender(IConfiguration configuration)
     {
         _configuration = configuration;
-        _serviceProvider = serviceProvider;
         InitRabbitMQ();
     }
     
@@ -27,13 +24,10 @@ public class OrganizationCreationRabbitMqSender
         };
 
         // Establish connection and create a channel
-        _connection = factory.CreateConnection();
+        var _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
 
-        _channel.ExchangeDeclare(
-            exchange: "amq.topic", 
-            type: ExchangeType.Topic, 
-            durable: true);
+        _channel.QueueDeclare(queue: "organization-create-queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
     }
     
     public void SendMessage(string routingKey, string message)
@@ -42,7 +36,7 @@ public class OrganizationCreationRabbitMqSender
 
         _channel.BasicPublish(
             exchange: "amq.topic", // The topic exchange
-            routingKey: "create.organization", // Routing key to target specific queues
+            routingKey: routingKey, // Routing key to target specific queues
             basicProperties: null, // Message properties (can add headers, etc.)
             body: body);
 
