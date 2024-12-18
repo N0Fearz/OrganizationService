@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using OrganizationService.Data;
 using OrganizationService.Models;
+using OrganizationService.Services;
 
 namespace OrganizationService.Repository
 {
@@ -10,10 +11,12 @@ namespace OrganizationService.Repository
     {
         private readonly OrganizationContext _organizationContext;
         private readonly ErpContext _erpContext;
-        public OrganizationRepository(OrganizationContext organizationContext, ErpContext erpContext)
+        public OrganizationRepository(OrganizationContext organizationContext, ErpContext erpContext, MigrationService migrationService)
         {
             _organizationContext = organizationContext;
             _erpContext = erpContext;
+
+            migrationService.MigrateAsync().GetAwaiter().GetResult();
         }
         public Organization GetOrganizationById(Guid id)
         {

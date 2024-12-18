@@ -18,6 +18,7 @@ builder.Services.AddSingleton<IConfiguration>(configuration);
 builder.Services.AddHostedService<OrganizationCreationRabbitMqConsumer>();
 builder.Services.AddHostedService<OrganizationCheckRabbitMqconsumer>();
 builder.Services.AddSingleton<OrganizationCreationRabbitMqSender>();
+builder.Services.AddScoped<MigrationService>();
 
 // Add services to the container.
 builder.Services.AddControllers();
