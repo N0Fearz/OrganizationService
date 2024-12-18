@@ -11,9 +11,12 @@ namespace OrganizationService.Services;
 public class OrganizationService : IOrganizationService
 {
     private readonly IOrganizationRepository _organizationRepository;
-    public OrganizationService(IOrganizationRepository organizationRepository)
+    private readonly MigrationService _migrationService;
+    public OrganizationService(IOrganizationRepository organizationRepository, MigrationService migrationService)
     {
         _organizationRepository = organizationRepository;
+        _migrationService = migrationService;
+        
     }
     public string AddOrganization(string organizationMessage)
     {
@@ -39,19 +42,24 @@ public class OrganizationService : IOrganizationService
             {
                 OrgId = orgId,
                 OrgName = orgName,
-                SchemaName = schemaName
+                SchemaName = schemaName.Result
             };
             _organizationRepository.AddOrganization(organization);
-            return schemaName;
+            return schemaName.Result;
         }
         
         throw new ArgumentNullException(organizationMessage, "organization message is missing");
     }
 
+    private async Task Migrate()
+    {
+        await _migrationService.MigrateAsync();
+    }
+    
     public string CheckOrganization(Guid organizationId)
     {
         var result = _organizationRepository.GetOrganizationById(organizationId);
-        if (result == null)
+        if (result.OrgName == null)
         {
             throw new ArgumentNullException(result.OrgName, "Organization Not Found");
         }
@@ -69,8 +77,9 @@ public class OrganizationService : IOrganizationService
         throw new NotImplementedException();
     }
 
-    public string AddOrganizationDbSchema(string orgName)
+    public async Task<string> AddOrganizationDbSchema(string orgName)
     {
+        await Migrate();
         var schemaName = $"schema_{orgName.ToLower()}";
         _organizationRepository.AddOrganizationDbSchema(schemaName);
         

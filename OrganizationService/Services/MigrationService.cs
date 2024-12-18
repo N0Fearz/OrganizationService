@@ -22,6 +22,7 @@ public class MigrationService
         if (await dbContext.Database.GetPendingMigrationsAsync() is { } migrations && migrations.Any())
         {
             await dbContext.Database.MigrateAsync();
+            Console.WriteLine("Migrated database");
         }
     }
 }
