@@ -59,7 +59,7 @@ public class OrganizationService : IOrganizationService
     public string CheckOrganization(Guid organizationId)
     {
         var result = _organizationRepository.GetOrganizationById(organizationId);
-        if (result.OrgName == null)
+        if (result == null)
         {
             throw new ArgumentNullException(result.OrgName, "Organization Not Found");
         }
