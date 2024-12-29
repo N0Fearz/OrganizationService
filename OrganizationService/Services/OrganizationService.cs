@@ -61,7 +61,11 @@ public class OrganizationService : IOrganizationService
         var result = _organizationRepository.GetOrganizationById(organizationId);
         if (result == null)
         {
-            throw new ArgumentNullException(result.OrgName, "Organization Not Found");
+            throw new ArgumentNullException(nameof(result), "Organization not found.");
+        }
+        if (result.OrgName == null)
+        {
+            throw new ArgumentNullException(nameof(result.OrgName), "Organization name is null.");
         }
 
         return result.SchemaName;
