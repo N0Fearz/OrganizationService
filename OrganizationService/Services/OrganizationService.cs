@@ -85,7 +85,6 @@ public class OrganizationService : IOrganizationService
     {
         await Migrate();
         var schemaName = $"schema_{orgName.ToLower()}";
-        _organizationRepository.AddOrganizationDbSchema(schemaName);
         
         return schemaName;
     }
