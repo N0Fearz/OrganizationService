@@ -56,7 +56,7 @@ public class OrganizationCheckRabbitMqconsumer : BackgroundService
                 var props = ea.BasicProperties;
                 var replyProps = _channel.CreateBasicProperties();
                 replyProps.CorrelationId = props.CorrelationId;
-                var organizationService = scope.ServiceProvider.GetService<IOrganizationService>();
+                var organizationService = scope.ServiceProvider.GetRequiredService<IOrganizationService>();
                 var response = organizationService.CheckOrganization(new Guid(message));
                 var newBody = Encoding.UTF8.GetBytes(response);
                 _channel.BasicPublish(exchange: "", routingKey: props.ReplyTo, basicProperties: replyProps, body:newBody);
