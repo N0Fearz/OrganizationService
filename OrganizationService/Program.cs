@@ -33,11 +33,6 @@ builder.Services.AddDbContextPool<OrganizationContext>(opt =>
         builder.Configuration.GetConnectionString("OrganizationsDB"),
         o => o
             .SetPostgresVersion(17, 0)));
-builder.Services.AddDbContextPool<ErpContext>(opt =>
-    opt.UseNpgsql(
-        builder.Configuration.GetConnectionString("ErpDB"),
-        o => o
-            .SetPostgresVersion(17, 0)));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
