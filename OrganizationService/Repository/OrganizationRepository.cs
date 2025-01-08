@@ -28,6 +28,12 @@ namespace OrganizationService.Repository
             _organizationContext.SaveChanges();
         }
 
+        public void RemoveOrganization(Organization organization)
+        {
+            _organizationContext.Organizations.Remove(organization);
+            Save();
+        }
+
         public IEnumerable<Organization> GetOrganizations()
         {
             return _organizationContext.Organizations.ToList();

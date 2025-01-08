@@ -76,9 +76,13 @@ public class OrganizationService : IOrganizationService
         throw new NotImplementedException();
     }
 
-    public void DeleteOrganization(Guid organizationId)
+    public string DeleteOrganization(Guid organizationId)
     {
-        throw new NotImplementedException();
+        var organization = _organizationRepository.GetOrganizationById(organizationId);
+        var schemaName = organization.SchemaName;
+        _organizationRepository.RemoveOrganization(organization);
+        
+        return schemaName;
     }
 
     public async Task<string> AddOrganizationDbSchema(string orgName)
