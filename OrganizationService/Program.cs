@@ -17,7 +17,9 @@ builder.Services.AddTransient<IOrganizationService, OrganizationService.Services
 builder.Services.AddSingleton<IConfiguration>(configuration);
 builder.Services.AddHostedService<OrganizationCreationRabbitMqConsumer>();
 builder.Services.AddHostedService<OrganizationCheckRabbitMqconsumer>();
+builder.Services.AddHostedService<OrganizationRemovalRabbitMqConsumer>();
 builder.Services.AddSingleton<OrganizationCreationRabbitMqSender>();
+builder.Services.AddSingleton<OrganizationRemovalRabbitMqSender>();
 builder.Services.AddScoped<MigrationService>();
 
 // Add services to the container.
