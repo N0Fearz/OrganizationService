@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using OrganizationService.Models;
 using RabbitMQ.Client;
 
 namespace OrganizationService.Services;
@@ -7,10 +8,11 @@ public class OrganizationCreationRabbitMqSender
 {
     private IModel _channel;
     private readonly IConfiguration _configuration;
-
-    public OrganizationCreationRabbitMqSender(IConfiguration configuration)
+    private readonly ILogPublisher _logPublisher;
+    public OrganizationCreationRabbitMqSender(IConfiguration configuration, ILogPublisher logPublisher)
     {
         _configuration = configuration;
+        _logPublisher = logPublisher;
         InitRabbitMQ();
     }
     
@@ -32,14 +34,29 @@ public class OrganizationCreationRabbitMqSender
     
     public void SendMessage(string routingKey, string message)
     {
-        var body = Encoding.UTF8.GetBytes(message);
+        try
+        {
+            var body = Encoding.UTF8.GetBytes(message);
 
-        _channel.BasicPublish(
-            exchange: "amq.topic", // The topic exchange
-            routingKey: routingKey, // Routing key to target specific queues
-            basicProperties: null, // Message properties (can add headers, etc.)
-            body: body);
+            _channel.BasicPublish(
+                exchange: "amq.topic", // The topic exchange
+                routingKey: routingKey, // Routing key to target specific queues
+                basicProperties: null, // Message properties (can add headers, etc.)
+                body: body);
 
-        Console.WriteLine($"Message sent to {routingKey}: {message}");
+            Console.WriteLine($"Message sent to {routingKey}: {message}");
+        }
+        catch (Exception e)
+        {
+            _logPublisher.SendMessage(new LogMessage
+            {
+                ServiceName = "OrganizationService",
+                LogLevel = "Error",
+                Message = $"Failed to receive message. Error: {e.Message}",
+                Timestamp = DateTime.Now,
+            });
+            Console.WriteLine(e);
+            throw;
+        }
     }
 }

@@ -3,6 +3,7 @@ using RabbitMQ.Client.Events;
 using RabbitMQ.Client;
 using System.Text;
 using Newtonsoft.Json.Linq;
+using OrganizationService.Models;
 
 namespace OrganizationService.Services
 {
@@ -16,12 +17,14 @@ namespace OrganizationService.Services
         private readonly IConfiguration _configuration;
         private readonly IServiceProvider _serviceProvider;
         private readonly OrganizationCreationRabbitMqSender _sender;
+        private readonly ILogPublisher _logPublisher;
 
-        public OrganizationCreationRabbitMqConsumer(IServiceProvider serviceProvider, IConfiguration configuration, OrganizationCreationRabbitMqSender sender)
+        public OrganizationCreationRabbitMqConsumer(IServiceProvider serviceProvider, IConfiguration configuration, OrganizationCreationRabbitMqSender sender, ILogPublisher logPublisher)
         {
             _serviceProvider = serviceProvider;
             _configuration = configuration;
             _sender = sender;
+            _logPublisher = logPublisher;
             InitRabbitMQ();
         }
 
@@ -49,23 +52,38 @@ namespace OrganizationService.Services
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            stoppingToken.Register(() => StopRabbitMQ());
-
-            var consumer = new EventingBasicConsumer(_channel);
-            consumer.Received += async (model, ea) =>
+            try
             {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
+                stoppingToken.Register(() => StopRabbitMQ());
 
-                // Process the message
-                await HandleMessageAsync(message);
-            };
+                var consumer = new EventingBasicConsumer(_channel);
+                consumer.Received += async (model, ea) =>
+                {
+                    var body = ea.Body.ToArray();
+                    var message = Encoding.UTF8.GetString(body);
 
-            _channel.BasicConsume(queue: _queueName,
-                                  autoAck: true,
-                                  consumer: consumer);
+                    // Process the message
+                    await HandleMessageAsync(message);
+                };
 
-            return Task.CompletedTask;
+                _channel.BasicConsume(queue: _queueName,
+                    autoAck: true,
+                    consumer: consumer);
+
+                return Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                _logPublisher.SendMessage(new LogMessage
+                {
+                    ServiceName = "OrganizationService",
+                    LogLevel = "Error",
+                    Message = $"Failed to receive message. Error: {e.Message}",
+                    Timestamp = DateTime.Now,
+                });
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private Task HandleMessageAsync(string message)

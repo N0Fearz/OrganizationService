@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using OrganizationService.Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -12,11 +13,13 @@ public class OrganizationCheckRabbitMqconsumer : BackgroundService
     private IModel _channel;
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogPublisher _logPublisher;
 
-    public OrganizationCheckRabbitMqconsumer(IServiceProvider serviceProvider, IConfiguration configuration)
+    public OrganizationCheckRabbitMqconsumer(IServiceProvider serviceProvider, IConfiguration configuration, ILogPublisher logPublisher)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
+        _logPublisher = logPublisher;
         InitRabbitMQ();
     }
 
@@ -41,34 +44,50 @@ public class OrganizationCheckRabbitMqconsumer : BackgroundService
     
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        stoppingToken.Register(() => StopRabbitMQ());
-
-        var consumer = new EventingBasicConsumer(_channel);
-        consumer.Received += async (model, ea) =>
+        try
         {
-            var body = ea.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            Console.WriteLine($"Received message: {ea.BasicProperties.CorrelationId}");
 
-            // Process the message
-            using (var scope = _serviceProvider.CreateScope())
+            stoppingToken.Register(() => StopRabbitMQ());
+
+            var consumer = new EventingBasicConsumer(_channel);
+            consumer.Received += async (model, ea) =>
             {
-                var props = ea.BasicProperties;
-                var replyProps = _channel.CreateBasicProperties();
-                replyProps.CorrelationId = props.CorrelationId;
-                var organizationService = scope.ServiceProvider.GetRequiredService<IOrganizationService>();
-                var response = organizationService.CheckOrganization(new Guid(message));
-                var newBody = Encoding.UTF8.GetBytes(response);
-                _channel.BasicPublish(exchange: "", routingKey: props.ReplyTo, basicProperties: replyProps, body:newBody);
-                Console.WriteLine($"Sent message: {props.ReplyTo}");
-            }
-        };
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                Console.WriteLine($"Received message: {ea.BasicProperties.CorrelationId}");
 
-        _channel.BasicConsume(queue: "request-queue",
-                              autoAck: true,
-                              consumer: consumer);
+                // Process the message
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var props = ea.BasicProperties;
+                    var replyProps = _channel.CreateBasicProperties();
+                    replyProps.CorrelationId = props.CorrelationId;
+                    var organizationService = scope.ServiceProvider.GetRequiredService<IOrganizationService>();
+                    var response = organizationService.CheckOrganization(new Guid(message));
+                    var newBody = Encoding.UTF8.GetBytes(response);
+                    _channel.BasicPublish(exchange: "", routingKey: props.ReplyTo, basicProperties: replyProps, body:newBody);
+                    Console.WriteLine($"Sent message: {props.ReplyTo}");
+                }
+            };
 
-        return Task.CompletedTask;
+            _channel.BasicConsume(queue: "request-queue",
+                autoAck: true,
+                consumer: consumer);
+
+            return Task.CompletedTask;
+        }
+        catch (Exception e)
+        {
+            _logPublisher.SendMessage(new LogMessage
+            {
+                ServiceName = "OrganizationService",
+                LogLevel = "Error",
+                Message = $"Failed to receive message. Error: {e.Message}",
+                Timestamp = DateTime.Now,
+            });
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     private void StopRabbitMQ()

@@ -1,14 +1,18 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OrganizationService.Data;
+using OrganizationService.Models;
 
 namespace OrganizationService.Services;
 
 public class MigrationService
 {
     private readonly IConfiguration _configuration;
-    public MigrationService(IConfiguration configuration)
+    private readonly ILogPublisher _logPublisher;
+    public MigrationService(IConfiguration configuration, ILogPublisher logPublisher)
     {
         _configuration = configuration;
+        _logPublisher = logPublisher;
+        
     }
 
     public async Task MigrateAsync()
@@ -22,6 +26,14 @@ public class MigrationService
         if (await dbContext.Database.GetPendingMigrationsAsync() is { } migrations && migrations.Any())
         {
             await dbContext.Database.MigrateAsync();
+            
+            _logPublisher.SendMessage(new LogMessage
+            {
+                ServiceName = "OrganizationService",
+                LogLevel = "Information",
+                Message = "Schema migrated successfully.",
+                Timestamp = DateTime.Now
+            });
             Console.WriteLine("Migrated database");
         }
     }

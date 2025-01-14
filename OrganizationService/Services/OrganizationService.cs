@@ -12,10 +12,12 @@ public class OrganizationService : IOrganizationService
 {
     private readonly IOrganizationRepository _organizationRepository;
     private readonly MigrationService _migrationService;
-    public OrganizationService(IOrganizationRepository organizationRepository, MigrationService migrationService)
+    private readonly ILogPublisher _logPublisher;
+    public OrganizationService(IOrganizationRepository organizationRepository, MigrationService migrationService, ILogPublisher logPublisher)
     {
         _organizationRepository = organizationRepository;
         _migrationService = migrationService;
+        _logPublisher = logPublisher;
         
     }
     public string AddOrganization(string organizationMessage)
@@ -81,7 +83,17 @@ public class OrganizationService : IOrganizationService
         var organization = _organizationRepository.GetOrganizationById(organizationId);
         var schemaName = organization.SchemaName;
         _organizationRepository.RemoveOrganization(organization);
-        
+        _logPublisher.SendMessage(new LogMessage
+        {
+            ServiceName = "OrganizationService",
+            LogLevel = "Information",
+            Message = "Schema deleted successfully.",
+            Timestamp = DateTime.Now,
+            Metadata = new Dictionary<string, string>
+            {
+                { "SchemaName", schemaName }
+            }
+        });
         return schemaName;
     }
 

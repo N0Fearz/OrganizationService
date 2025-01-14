@@ -20,6 +20,7 @@ builder.Services.AddHostedService<OrganizationCheckRabbitMqconsumer>();
 builder.Services.AddHostedService<OrganizationRemovalRabbitMqConsumer>();
 builder.Services.AddSingleton<OrganizationCreationRabbitMqSender>();
 builder.Services.AddSingleton<OrganizationRemovalRabbitMqSender>();
+builder.Services.AddSingleton<ILogPublisher, LogPublisher>();
 builder.Services.AddScoped<MigrationService>();
 
 // Add services to the container.
