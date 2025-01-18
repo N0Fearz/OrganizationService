@@ -41,39 +41,61 @@ pipeline {
         }
     }
     stage('SonarQube Analysis') {
+        environment {
+          SONAR_TOKEN = credentials('sonar-token') // Gebruik de juiste credential ID in Jenkins
+        }
         steps {
           withSonarQubeEnv('SonarQube') { // Naam van de SonarQube server zoals ingesteld in Jenkins
             sh '''
-            dotnet sonarscanner begin /k:"organizationservice"
+            dotnet sonarscanner begin \
+              /k:"n0fearz_OrganizationService" \
+              /o:"n0fearz" \
+              /d:sonar.login="$SONAR_TOKEN"
             dotnet build --configuration Release
-            dotnet sonarscanner end
+            dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
             '''
         }
       }
     }
-        stage('Build Docker Image') {
-            steps {
-              dir('OrganizationService') {
-                script {
-                    // Zorg dat je een Dockerfile in je project hebt
+    //stage("Quality Gate") {
+    //  steps {
+    //   timeout(time: 1, unit: 'MINUTES') {
+    //        waitForQualityGate abortPipeline: true
+    //     }
+    //   }
+    // }
+    stage('Build Docker Image') {
+        steps {
+          dir('OrganizationService') {
+            script {
+                // Zorg dat je een Dockerfile in je project hebt
+                sh """
+                docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
+                """
+            }
+          }
+        }
+    }
+    stage('Push Docker Image') {
+        steps {
+            script {
+                // Login naar Docker Registry (indien nodig)
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
                     sh """
-                    docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
+                    docker push ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
                     """
                 }
-              }
             }
         }
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    // Login naar Docker Registry (indien nodig)
-                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
-                        sh """
-                        docker push ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-                        """
-                    }
-                }
-            }
-        }
+    }
+    
   }
+    post {
+        success {
+            build job: 'IntegrationTest', wait: false, parameters: [
+                string(name: 'TRIGGER_SERVICE', value: 'ArticleService'),
+                string(name: 'BUILD_NUMBER', value: 'latest')
+            ]
+        }
+    }  
 }
