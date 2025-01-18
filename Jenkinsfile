@@ -93,7 +93,7 @@ pipeline {
     post {
         success {
             build job: 'IntegrationTest', wait: false, parameters: [
-                string(name: 'TRIGGER_SERVICE', value: 'ArticleService'),
+                string(name: 'TRIGGER_SERVICE', value: 'OrganizationService'),
                 string(name: 'BUILD_NUMBER', value: 'latest')
             ]
         }
