@@ -37,7 +37,7 @@ pipeline {
 
     stage('Test') {
       steps {
-        sh 'dotnet test OrganizationService.sln --no-build --configuration Release --logger "trx;LogFileName=test_results.trx"'
+        sh 'dotnet test OrganizationService.sln --no-build --configuration Release'
       }
     }
     
