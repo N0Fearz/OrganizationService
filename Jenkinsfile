@@ -34,6 +34,13 @@ pipeline {
         sh 'dotnet build OrganizationService.sln --configuration Release'
       }
     }
+
+    stage('Test') {
+      steps {
+        sh 'dotnet test OrganizationService.sln --no-build --configuration Release --logger "trx;LogFileName=test_results.trx"'
+      }
+    }
+    
     stage('Install SonarScanner') {
       steps {
           sh 'dotnet tool install --global dotnet-sonarscanner'
