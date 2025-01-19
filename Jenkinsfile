@@ -5,9 +5,9 @@ pipeline {
   }
   environment {
       DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
-      PATH = "${env.HOME}/.dotnet/tools:${env.PATH}" // Voeg ~/.dotnet/tools toe aan het PATH
-      DOCKER_IMAGE = "casgoorman/organizationservice" // Pas aan naar jouw image
-      DOCKER_TAG = "latest" // Of gebruik bijv. BUILD_NUMBER voor een unieke tag
+      PATH = "${env.HOME}/.dotnet/tools:${env.PATH}"
+      DOCKER_IMAGE = "casgoorman/organizationservice" 
+      DOCKER_TAG = "latest" 
   }
   stages{
     stage('Clean and checkout'){
@@ -34,6 +34,13 @@ pipeline {
         sh 'dotnet build OrganizationService.sln --configuration Release'
       }
     }
+
+    stage('Test') {
+      steps {
+        sh 'dotnet test OrganizationService.sln --no-build --configuration Release'
+      }
+    }
+    
     stage('Install SonarScanner') {
       steps {
           sh 'dotnet tool install --global dotnet-sonarscanner'
@@ -41,39 +48,61 @@ pipeline {
         }
     }
     stage('SonarQube Analysis') {
+        environment {
+          SONAR_TOKEN = credentials('sonar-token') // Gebruik de juiste credential ID in Jenkins
+        }
         steps {
           withSonarQubeEnv('SonarQube') { // Naam van de SonarQube server zoals ingesteld in Jenkins
             sh '''
-            dotnet sonarscanner begin /k:"organizationservice"
+            dotnet sonarscanner begin \
+              /k:"n0fearz_OrganizationService" \
+              /o:"n0fearz" \
+              /d:sonar.login="$SONAR_TOKEN"
             dotnet build --configuration Release
-            dotnet sonarscanner end
+            dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
             '''
         }
       }
     }
-        stage('Build Docker Image') {
-            steps {
-              dir('OrganizationService') {
-                script {
-                    // Zorg dat je een Dockerfile in je project hebt
+    //stage("Quality Gate") {
+    //  steps {
+    //   timeout(time: 1, unit: 'MINUTES') {
+    //        waitForQualityGate abortPipeline: true
+    //     }
+    //   }
+    // }
+    stage('Build Docker Image') {
+        steps {
+          dir('OrganizationService') {
+            script {
+                // Zorg dat je een Dockerfile in je project hebt
+                sh """
+                docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
+                """
+            }
+          }
+        }
+    }
+    stage('Push Docker Image') {
+        steps {
+            script {
+                // Login naar Docker Registry (indien nodig)
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
                     sh """
-                    docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
+                    docker push ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
                     """
                 }
-              }
             }
         }
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    // Login naar Docker Registry (indien nodig)
-                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
-                        sh """
-                        docker push ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-                        """
-                    }
-                }
-            }
-        }
+    }
+    
   }
+    post {
+        success {
+            build job: 'IntegrationTest', wait: false, parameters: [
+                string(name: 'TRIGGER_SERVICE', value: 'OrganizationService'),
+                string(name: 'BUILD_NUMBER', value: 'latest')
+            ]
+        }
+    }  
 }
